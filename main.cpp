@@ -1,11 +1,9 @@
-#include"DataCollector.hpp"
-
+#include"GUIClasses.hpp"
 int main()
 {
-    std::vector<std::shared_ptr<SomeObject>> Objects;
+    Application app;
+    app.run();
+    return 0;
 
-    DataCollector data;
-    Objects=data.CollectFromFile("TestFile");
-    
-    
+    return 0;
 }
