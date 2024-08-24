@@ -1,19 +1,5 @@
-#include<string>
-#include<iostream>
-#include<fstream>
-#include<vector>
-#include<sstream>
-#include <iomanip>
-#include <ctime>
-#include<memory>
-#include <SFML/Graphics.hpp>
-#include <SFML/Window.hpp>
-#include<map>
-#include<queue>
-#include<functional>
-#include<stack>
-#include <locale>
-#include <codecvt>
+#include"Includes.hpp"
+#pragma once
 
 
 std::wstring convertTimestampToWString(double timestamp) {
@@ -61,6 +47,8 @@ public:
         return s.str();
     }
     
-
+    double getDistance() const {
+        return std::sqrt(CoordX * CoordX + CoordY * CoordY);
+    }
 
 };

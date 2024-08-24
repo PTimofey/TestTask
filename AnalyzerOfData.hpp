@@ -1,91 +1,229 @@
-#include<Object.hpp>
+#include"Includes.hpp"
+#include"Object.hpp"
 
 
 
-class DataAnalyzer
-{
+class GroupingStrategy {
 public:
-    DataAnalyzer(const std::vector<std::shared_ptr<SomeObject>> objcts, sf::Font& f) : Objects(objcts), show(false)
-    {
-        font=std::make_shared<sf::Font>(f);
-        if (!font->loadFromFile("arial.ttf")) 
-        {
-            exit(1);
+    virtual void group(const std::vector<std::shared_ptr<SomeObject>>& objects) = 0;
+    virtual std::vector<std::wstring> getGroupedStrings() const = 0;
+    virtual ~GroupingStrategy() = default;
+    
+protected:
+    std::map<std::wstring, std::vector<std::shared_ptr<SomeObject>>> groups;
+};
+
+class DistanceGroupingStrategy : public GroupingStrategy {
+public:
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
+        for (const auto& obj : objects) {
+            double distance = obj->getDistance();
+            std::wstring groupKey;
+
+            if (distance <= 100) {
+                groupKey = L"До 100 ед.";
+            } else if (distance <= 1000) {
+                groupKey = L"До 1000 ед.";
+            } else if (distance <= 10000) {
+                groupKey = L"До 10000 ед.";
+            } else {
+                groupKey = L"Слишком далеко";
+            }
+
+            groups[groupKey].push_back(obj);
         }
-    }  
 
-    virtual void Grouping()=0;
-    virtual void SortingGroup()=0;
-    
-    
-    std::shared_ptr<sf::Font> font;
-    std::vector<std::shared_ptr<SomeObject>> Objects;
-    std::vector<sf::Text> textObjects;
-    bool show;
-};
-
-class DistanceAnalyzer : public DataAnalyzer
-{
-public:
-    using DataAnalyzer::DataAnalyzer;
-    
-};
-
-
-class NameAnalyzer : private DataAnalyzer
-{
-public:
-    using DataAnalyzer::DataAnalyzer;
-
-    void Grouping()override
-    {
-        for(auto& i : Objects)
-        {
-            wchar_t FirstChar = i->NameOfObject[0];
-            if (std::isdigit(FirstChar) || !std::isalpha(FirstChar)) 
-            {
-                groupedNames['#'].push(i);
-            }
-            else
-            {
-                groupedNames[FirstChar].push(i);
-            }
+        // Сортируем внутри каждой группы по возрастанию дистанции
+        for (auto& group : groups) {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {
+                return a->getDistance() < b->getDistance();
+            });
         }
     }
 
-    void SortingGroup() override
-    {   
-        
-        int i=0;
-        for(auto iter{groupedNames.begin()}; iter!=groupedNames.end(); iter++)
-        {
-            i++;
-            while(!iter->second.empty())
-            {
-                i++;
-                //sf::Text text(iter->second.top()->NameOfObject, *font, 24);
-                //text.setFillColor(sf::Color::White);
-                //text.setPosition(300, 200 + i * 30);
-                //textObjects.push_back(text);
+    std::vector<std::wstring> getGroupedStrings() const override {
+        std::vector<std::wstring> result;
+
+        // Предварительное выделение памяти для результирующего вектора
+        size_t totalSize = 0;
+        for (const auto& group : groups) {
+            totalSize += 1 + group.second.size();  // 1 для ключа, плюс количество объектов
+        }
+        result.reserve(totalSize);
+
+        // Заполнение результирующего вектора
+        for (const auto& group : groups) {
+            result.push_back(group.first);
+            for (const auto& obj : group.second) {
+                result.push_back(obj->getString());
             }
-        }   
+        }
+
+        return result;
     }
+};
+
+class NameGroupingStrategy : public GroupingStrategy {
+public:
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override 
+    {
+        for (const auto& obj : objects) 
+        {
+            wchar_t firstChar =obj->NameOfObject[0];
+
+            // Определяем группу по первому символу
+            std::wstring groupKey;
+            if (iswdigit(firstChar) || iswpunct(firstChar) || iswalpha(firstChar) || iswlower(firstChar)) 
+            {
+                groupKey = L"#";
+            } 
+            else 
+            {   
+                groupKey = std::wstring(1, firstChar);
+            }
+
+            // Вставляем объект в соответствующую группу
+            groups[groupKey].push_back(obj);
+        }
+
+        // Сортируем группы сразу после заполнения
+        for (auto& group : groups) 
+        {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
+            {
+                return a->NameOfObject < b->NameOfObject;
+            });
+        }
+    }
+
+    std::vector<std::wstring> getGroupedStrings() const override 
+    {
+        std::vector<std::wstring> result;
+
+        // Предварительное выделение памяти для результирующего вектора
+        size_t totalSize = 0;
+        for (const auto& group : groups) {
+            totalSize += 1 + group.second.size();  // 1 для ключа, плюс количество объектов
+        }
+        result.reserve(totalSize);
+
+        // Заполнение результирующего вектора
+        for (const auto& group : groups) {
+            result.push_back(group.first);
+            for (const auto& obj : group.second) {
+                result.push_back(obj->getString());
+            }
+        }
+
+        return result;
+    }
+};
+
+
+// Группировка по времени создания
+class TimeGroupingStrategy : public GroupingStrategy {
+public:
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
+        std::time_t now = std::time(0);
+        std::tm now_tm = *std::localtime(&now);
+
+        for (const auto& obj : objects) {
+            // Преобразование double в time_t
+            std::time_t obj_time = static_cast<std::time_t>(obj->TimeOfCreation);
+            std::tm obj_tm = *std::localtime(&obj_time);
+
+            
+
+            // Группировка по времени
+            if (obj_tm.tm_year == now_tm.tm_year && obj_tm.tm_yday == now_tm.tm_yday) 
+            {
+                std::cout<<now_tm.tm_year<<"\n";
+                groups[L"Сегодня"].push_back(obj);
+            } 
+            else if (obj_tm.tm_year == now_tm.tm_year && obj_tm.tm_yday == now_tm.tm_yday - 1) 
+            {
+                groups[L"Вчера"].push_back(obj);
+            } 
+            else if (obj_tm.tm_year == now_tm.tm_year && (now_tm.tm_yday - obj_tm.tm_yday) < 7) 
+            {
+                groups[L"На этой неделе"].push_back(obj);
+            } 
+            else if (obj_tm.tm_year == now_tm.tm_year && obj_tm.tm_mon == now_tm.tm_mon) 
+            {
+                groups[L"В этом месяце"].push_back(obj);
+            } 
+            else if (obj_tm.tm_year == now_tm.tm_year) 
+            {
+                groups[L"В этом году"].push_back(obj);
+            } 
+            else {
+                groups[L"Ранее"].push_back(obj);
+            }
+        }
+
+        // Сортировка внутри каждой группы по времени создания
+        for (auto& group : groups) {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
+            {
+                return a->TimeOfCreation < b->TimeOfCreation;
+            });
+        }
+    }
+
+    std::vector<std::wstring> getGroupedStrings() const override {
+        std::vector<std::wstring> result;
+
+        for (const auto& group : groups) {
+            result.push_back(group.first);
+            for (const auto& obj : group.second) {
+                result.push_back(obj->getString());
+            }
+        }
+
+        return result;
+    }
+};
+
+class TypeGroupingStrategy : public GroupingStrategy {
+public:
+    TypeGroupingStrategy(int threshold) : typeThreshold(threshold) {}
+
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
+        std::map<std::wstring, std::vector<std::shared_ptr<SomeObject>>> typeGroups;
+
+        for (const auto& obj : objects) {
+            typeGroups[obj->TypeOfObject].push_back(obj);
+        }
+
+        for (auto& typeGroup : typeGroups) {
+            if (typeGroup.second.size() > typeThreshold) {
+                groups[typeGroup.first] = typeGroup.second;
+            } else {
+                groups[L"Разное"].insert(groups[L"Разное"].end(), typeGroup.second.begin(), typeGroup.second.end());
+            }
+        }
+
+        // Сортировка внутри каждой группы по имени
+        for (auto& group : groups) {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {
+                return a->NameOfObject < b->NameOfObject;
+            });
+        }
+    }
+
+    std::vector<std::wstring> getGroupedStrings() const override {
+        std::vector<std::wstring> result;
+
+        for (const auto& group : groups) {
+            result.push_back(group.first);
+            for (const auto& obj : group.second) {
+                result.push_back(obj->getString());
+            }
+        }
+
+        return result;
+    }
+
 private:
-struct CompareByName 
-    {
-        bool operator()(const std::shared_ptr<SomeObject> LeftObj, const std::shared_ptr<SomeObject> RightObj){return LeftObj->NameOfObject > RightObj->NameOfObject;};    
-    };
-    std::map<wchar_t, std::priority_queue<std::shared_ptr<SomeObject>>, CompareByName> groupedNames;
-
+    int typeThreshold;
 };
-
-class TimeAnalyzer : private DataAnalyzer
-{
-
-};
-
-class TypeAnalyzer : private DataAnalyzer
-{
-
-};
-
