@@ -7,7 +7,24 @@ class GroupingStrategy
 {
 public:
     virtual void group(const std::vector<std::shared_ptr<SomeObject>>& objects) = 0;
-    virtual std::vector<std::wstring> getGroupedStrings() const = 0;
+    virtual std::vector<std::wstring> getGroupedStrings() const
+    {
+        std::vector<std::wstring> result;
+        std::locale::global(std::locale(""));
+        std::wofstream inputInFile("OutputFile");
+        for (const auto& group : groups) 
+        {
+            result.push_back(group.first);
+            inputInFile<<result.back()<<"\n";
+            for (const auto& obj : group.second) 
+            {
+                result.push_back(obj->getString());
+                inputInFile<<result.back();
+            }
+        }
+        inputInFile.close();
+        return result;
+    }
     virtual ~GroupingStrategy() = default;
     
 protected:
@@ -111,29 +128,11 @@ public:
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override 
-    {
-        std::vector<std::wstring> result;
-        std::locale::global(std::locale(""));
-        std::wofstream inputInFile("OutputFile");
-        
-        for (const auto& group : groups) 
-        {
-            result.push_back(group.first);
-            inputInFile<<result.back()<<'\n';
-            for (const auto& obj : group.second) 
-            {
-                result.push_back(obj->getString());
-                inputInFile<<result.back();
-            }
-        }
-        inputInFile.close();
-        return result;
-    }
+    
 };
 
 
-// Группировка по времени создания
+// Grouping by creation time
 class TimeGroupingStrategy : public GroupingStrategy {
 public:
     void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
@@ -141,13 +140,14 @@ public:
         std::tm now_tm = *std::localtime(&now);
 
         for (const auto& obj : objects) {
-            // Преобразование double в time_t
+            
+            // Converting double to time_t
             std::time_t obj_time = static_cast<std::time_t>(obj->TimeOfCreation);
             std::tm obj_tm = *std::localtime(&obj_time);
 
             
 
-            // Группировка по времени
+            // Grouping by time
             if (obj_tm.tm_year == now_tm.tm_year && obj_tm.tm_yday == now_tm.tm_yday) 
             {
                 std::cout<<now_tm.tm_year<<"\n";
@@ -174,7 +174,7 @@ public:
             }
         }
 
-        // Сортировка внутри каждой группы по времени создания
+        // Sorting within each group by creation time
         for (auto& group : groups) 
         {
             std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
@@ -184,24 +184,7 @@ public:
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override 
-    {
-        std::vector<std::wstring> result;
-        std::locale::global(std::locale(""));
-        std::wofstream inputInFile("OutputFile");
-        for (const auto& group : groups) 
-        {
-            result.push_back(group.first);
-            inputInFile<<result.back()<<"\n";
-            for (const auto& obj : group.second) 
-            {
-                result.push_back(obj->getString());
-                inputInFile<<result.back();
-            }
-        }
-        inputInFile.close();
-        return result;
-    }
+    
 };
 
 
@@ -238,25 +221,7 @@ public:
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override 
-    {
-        std::vector<std::wstring> result;
-        std::locale::global(std::locale(""));
-        std::wofstream inputInFile("OutputFile");
-
-        for (auto& group : groups) 
-        {
-            result.push_back(group.first);
-            inputInFile<<result.back()<<"\n";
-            for (const auto& obj : group.second) 
-            {
-                result.push_back(obj->getString());
-                inputInFile<<result.back();
-            }
-        }
-        inputInFile.close();
-        return result;
-    }
+    
 
 private:
     int typeThreshold;

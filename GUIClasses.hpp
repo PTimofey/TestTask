@@ -149,6 +149,7 @@ private:
         }
     }
 
+    // Handling mouse clicks
     void handleMouseClick(sf::Vector2i mousePos) {
         switch (currentState) 
         {
@@ -179,6 +180,7 @@ private:
         }
     }
 
+    // Handling buttons in the main menu
     void handleMainMenuClick(sf::Vector2i mousePos) 
     {
         if (buttons["ManualInput"].isClicked(mousePos)) 
@@ -213,6 +215,7 @@ private:
         }
     }
 
+    // Handling manual input
     void handleManualInputClick(sf::Vector2i mousePos) 
     {
         if (buttons["AddObject"].isClicked(mousePos)) 
@@ -227,7 +230,8 @@ private:
             currentState = ApplicationState::MainMenu;
         }
     }
-
+    
+    //Handling input from file
     void handleFileInputClick(sf::Vector2i mousePos) 
     {
         if (buttons["AddFromFile"].isClicked(mousePos)) 
@@ -243,6 +247,7 @@ private:
         }
     }
 
+    // Show Objects
     void handleShowObjectsClick(sf::Vector2i mousePos) 
     {
 
@@ -252,6 +257,7 @@ private:
         }
     }
 
+    // Handling of various groupings
     template <typename GroupingStrategy>
     void handleGroupClick(sf::Vector2i mousePos) 
     {
@@ -265,6 +271,7 @@ private:
             currentState = ApplicationState::MainMenu;
         }
     }
+
 
     void render() 
     {
@@ -294,6 +301,7 @@ private:
         window.display();
     }
 
+    
     void renderMainMenu() {
         buttons["ManualInput"].draw(window);
         buttons["FileInput"].draw(window);
@@ -330,7 +338,7 @@ private:
         }
         buttons["Back"].draw(window);
     }
-
+    
     void renderGroupedObjects() 
     {
         buttons["Back"].draw(window);
@@ -345,5 +353,12 @@ private:
             window.draw(objText);
             y += 20;
         }
+        sf::Text alert;
+        alert.setFont(font);
+        alert.setString(L"Нажмите на мышку)");
+        alert.setCharacterSize(30);
+        alert.setFillColor(sf::Color::Black);
+        alert.setPosition(1480, 260);
+        window.draw(alert);
     }
 };
