@@ -3,7 +3,8 @@
 
 
 
-class GroupingStrategy {
+class GroupingStrategy 
+{
 public:
     virtual void group(const std::vector<std::shared_ptr<SomeObject>>& objects) = 0;
     virtual std::vector<std::wstring> getGroupedStrings() const = 0;
@@ -11,22 +12,35 @@ public:
     
 protected:
     std::map<std::wstring, std::vector<std::shared_ptr<SomeObject>>> groups;
+    
+    
 };
 
-class DistanceGroupingStrategy : public GroupingStrategy {
+class DistanceGroupingStrategy : public GroupingStrategy 
+{
 public:
-    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
-        for (const auto& obj : objects) {
+    
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override 
+    {
+        for (const auto& obj : objects) 
+        {
             double distance = obj->getDistance();
             std::wstring groupKey;
 
-            if (distance <= 100) {
+            if (distance <= 100) 
+            {
                 groupKey = L"До 100 ед.";
-            } else if (distance <= 1000) {
+            } 
+            else if (distance <= 1000) 
+            {
                 groupKey = L"До 1000 ед.";
-            } else if (distance <= 10000) {
+            } 
+            else if (distance <= 10000) 
+            {
                 groupKey = L"До 10000 ед.";
-            } else {
+            } 
+            else 
+            {
                 groupKey = L"Слишком далеко";
             }
 
@@ -35,30 +49,31 @@ public:
 
         // Сортируем внутри каждой группы по возрастанию дистанции
         for (auto& group : groups) {
-            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
+            {
                 return a->getDistance() < b->getDistance();
             });
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override {
+    std::vector<std::wstring> getGroupedStrings() const override 
+    {
         std::vector<std::wstring> result;
-
-        // Предварительное выделение памяти для результирующего вектора
-        size_t totalSize = 0;
-        for (const auto& group : groups) {
-            totalSize += 1 + group.second.size();  // 1 для ключа, плюс количество объектов
-        }
-        result.reserve(totalSize);
+        std::locale::global(std::locale(""));
+        std::wofstream inputInFile("OutputFile");
 
         // Заполнение результирующего вектора
-        for (const auto& group : groups) {
+        for (const auto& group : groups) 
+        {
             result.push_back(group.first);
-            for (const auto& obj : group.second) {
+            inputInFile<<result.back()<<'\n';
+            for (const auto& obj : group.second) 
+            {
                 result.push_back(obj->getString());
+                inputInFile<<result.back();
             }
         }
-
+        inputInFile.close();
         return result;
     }
 };
@@ -99,22 +114,20 @@ public:
     std::vector<std::wstring> getGroupedStrings() const override 
     {
         std::vector<std::wstring> result;
-
-        // Предварительное выделение памяти для результирующего вектора
-        size_t totalSize = 0;
-        for (const auto& group : groups) {
-            totalSize += 1 + group.second.size();  // 1 для ключа, плюс количество объектов
-        }
-        result.reserve(totalSize);
-
-        // Заполнение результирующего вектора
-        for (const auto& group : groups) {
+        std::locale::global(std::locale(""));
+        std::wofstream inputInFile("OutputFile");
+        
+        for (const auto& group : groups) 
+        {
             result.push_back(group.first);
-            for (const auto& obj : group.second) {
+            inputInFile<<result.back()<<'\n';
+            for (const auto& obj : group.second) 
+            {
                 result.push_back(obj->getString());
+                inputInFile<<result.back();
             }
         }
-
+        inputInFile.close();
         return result;
     }
 };
@@ -162,7 +175,8 @@ public:
         }
 
         // Сортировка внутри каждой группы по времени создания
-        for (auto& group : groups) {
+        for (auto& group : groups) 
+        {
             std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
             {
                 return a->TimeOfCreation < b->TimeOfCreation;
@@ -170,57 +184,77 @@ public:
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override {
+    std::vector<std::wstring> getGroupedStrings() const override 
+    {
         std::vector<std::wstring> result;
-
-        for (const auto& group : groups) {
+        std::locale::global(std::locale(""));
+        std::wofstream inputInFile("OutputFile");
+        for (const auto& group : groups) 
+        {
             result.push_back(group.first);
-            for (const auto& obj : group.second) {
+            inputInFile<<result.back()<<"\n";
+            for (const auto& obj : group.second) 
+            {
                 result.push_back(obj->getString());
+                inputInFile<<result.back();
             }
         }
-
+        inputInFile.close();
         return result;
     }
 };
 
-class TypeGroupingStrategy : public GroupingStrategy {
-public:
-    TypeGroupingStrategy(int threshold) : typeThreshold(threshold) {}
 
-    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override {
+
+class TypeGroupingStrategy : public GroupingStrategy 
+{
+public:
+    TypeGroupingStrategy(){typeThreshold=2;}
+
+    void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override 
+    {
         std::map<std::wstring, std::vector<std::shared_ptr<SomeObject>>> typeGroups;
 
-        for (const auto& obj : objects) {
+        for (const auto& obj : objects) 
+        {
             typeGroups[obj->TypeOfObject].push_back(obj);
         }
 
         for (auto& typeGroup : typeGroups) {
-            if (typeGroup.second.size() > typeThreshold) {
+            if (typeGroup.second.size() > typeThreshold) 
+            {
                 groups[typeGroup.first] = typeGroup.second;
-            } else {
+            } 
+            else 
+            {
                 groups[L"Разное"].insert(groups[L"Разное"].end(), typeGroup.second.begin(), typeGroup.second.end());
             }
         }
 
         // Сортировка внутри каждой группы по имени
-        for (auto& group : groups) {
-            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {
-                return a->NameOfObject < b->NameOfObject;
-            });
+        for (auto& group : groups) 
+        {
+            std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {return a->NameOfObject < b->NameOfObject;});
         }
     }
 
-    std::vector<std::wstring> getGroupedStrings() const override {
+    std::vector<std::wstring> getGroupedStrings() const override 
+    {
         std::vector<std::wstring> result;
+        std::locale::global(std::locale(""));
+        std::wofstream inputInFile("OutputFile");
 
-        for (const auto& group : groups) {
+        for (auto& group : groups) 
+        {
             result.push_back(group.first);
-            for (const auto& obj : group.second) {
+            inputInFile<<result.back()<<"\n";
+            for (const auto& obj : group.second) 
+            {
                 result.push_back(obj->getString());
+                inputInFile<<result.back();
             }
         }
-
+        inputInFile.close();
         return result;
     }
 

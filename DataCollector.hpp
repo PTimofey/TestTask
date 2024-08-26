@@ -1,10 +1,6 @@
 #include"Object.hpp"
 
 
-
-
-
-
 class DataCollector
 {
 public:
