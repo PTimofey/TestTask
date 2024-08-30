@@ -1,8 +1,12 @@
 #include"Includes.hpp"
 #include"Object.hpp"
 
+// here I use the strategy pattern, as these algorithms have common features //
+// This architecture will also make it easier to add new data collection methods //
 
 
+
+// Base class for other algorithms 
 class GroupingStrategy 
 {
 public:
@@ -33,6 +37,7 @@ protected:
     
 };
 
+// grouping by distance
 class DistanceGroupingStrategy : public GroupingStrategy 
 {
 public:
@@ -64,7 +69,7 @@ public:
             groups[groupKey].push_back(obj);
         }
 
-        // Сортируем внутри каждой группы по возрастанию дистанции
+        // We sort within each group by increasing distance
         for (auto& group : groups) {
             std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
             {
@@ -79,7 +84,7 @@ public:
         std::locale::global(std::locale(""));
         std::wofstream inputInFile("OutputFile");
 
-        // Заполнение результирующего вектора
+        // Filling in the resulting vector
         for (const auto& group : groups) 
         {
             result.push_back(group.first);
@@ -95,6 +100,8 @@ public:
     }
 };
 
+
+// grouping by name
 class NameGroupingStrategy : public GroupingStrategy {
 public:
     void group(const std::vector<std::shared_ptr<SomeObject>>& objects) override 
@@ -103,7 +110,7 @@ public:
         {
             wchar_t firstChar =obj->NameOfObject[0];
 
-            // Определяем группу по первому символу
+            // We define the group by the first character
             std::wstring groupKey;
             if (iswdigit(firstChar) || iswpunct(firstChar) || iswalpha(firstChar) || iswlower(firstChar)) 
             {
@@ -114,11 +121,11 @@ public:
                 groupKey = std::wstring(1, firstChar);
             }
 
-            // Вставляем объект в соответствующую группу
+            // We insert the object into the appropriate group
             groups[groupKey].push_back(obj);
         }
 
-        // Сортируем группы сразу после заполнения
+        // We sort the groups immediately after filling in
         for (auto& group : groups) 
         {
             std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) 
@@ -220,8 +227,6 @@ public:
             std::sort(group.second.begin(), group.second.end(), [](const std::shared_ptr<SomeObject>& a, const std::shared_ptr<SomeObject>& b) {return a->NameOfObject < b->NameOfObject;});
         }
     }
-
-    
 
 private:
     int typeThreshold;

@@ -1,6 +1,9 @@
 #include"Object.hpp"
 
 
+
+
+
 class DataCollector
 {
 public:
@@ -34,13 +37,14 @@ public:
     
         return obj;
     }
-    virtual void Collect(std::vector<std::shared_ptr<SomeObject>>& )=0;
 
-    //virtual ~DataCollector(){}
-    
+    // method for collecting data that is inherited by the rest of the heirs classes
+    virtual void Collect(std::vector<std::shared_ptr<SomeObject>>& )=0;
 };
 
 
+
+// Collects data from a file
 class DataCollectorFromFile : public DataCollector
 {
 public:
@@ -60,7 +64,7 @@ private:
 };
 
 
-
+// Collects data from a input field
 class DataCollectorFromInputField : public DataCollector
 {
 public:
